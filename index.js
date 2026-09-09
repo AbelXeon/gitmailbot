@@ -9,7 +9,15 @@ app.use(express.json());
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Helper function to send messages to your Telegram
+// Catch unexpected errors so the server NEVER crashes
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason?.message || reason);
+});
+
+// Helper: Send Telegram message
 async function sendTelegram(message) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
   try {
@@ -19,7 +27,7 @@ async function sendTelegram(message) {
       parse_mode: 'Markdown'
     });
   } catch (err) {
-    console.error('Failed to send Telegram message:', err.response?.data || err.message);
+    console.error('Failed to send Telegram message:', err.response?.data?.description || err.message);
   }
 }
 
@@ -27,6 +35,8 @@ async function sendTelegram(message) {
 // 1. GITHUB WEBHOOK ENDPOINT
 // -------------------------------------------------------------
 app.post('/github-webhook', (req, res) => {
+  res.status(200).send('OK'); // Reply immediately
+
   const event = req.headers['x-github-event'];
   const payload = req.body;
 
@@ -48,14 +58,15 @@ app.post('/github-webhook', (req, res) => {
   }
 
   sendTelegram(msg);
-  res.status(200).send('OK');
 });
 
-
+// -------------------------------------------------------------
+// 2. GMAIL CHECKER
+// -------------------------------------------------------------
 const imapConfig = {
   imap: {
     user: process.env.GMAIL_USER,
-    password: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, ''), // removes spaces if any
+    password: process.env.GMAIL_APP_PASSWORD ? process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, '') : '',
     host: 'imap.gmail.com',
     port: 993,
     tls: true,
@@ -64,33 +75,23 @@ const imapConfig = {
   }
 };
 
-
-// Keep track of emails we already notified you about
 const notifiedEmailIds = new Set();
 
 async function checkGmail() {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return;
+
   try {
     const connection = await imaps.connect(imapConfig);
     await connection.openBox('INBOX');
 
-    // ONLY search for UNREAD emails in the PRIMARY category (ignores Social, Promotions, Updates)
-    const searchCriteria = [
-      ['X-GM-RAW', 'is:unread category:primary']
-    ];
-    const fetchOptions = { 
-      bodies: ['HEADER'], 
-      markSeen: true 
-    };
+    const searchCriteria = [['X-GM-RAW', 'is:unread category:primary']];
+    const fetchOptions = { bodies: ['HEADER'], markSeen: true };
 
     const messages = await connection.search(searchCriteria, fetchOptions);
 
     for (let item of messages) {
       const uid = item.attributes.uid;
-
-      // Skip if we already sent you a notification for this email
-      if (notifiedEmailIds.has(uid)) {
-        continue;
-      }
+      if (notifiedEmailIds.has(uid)) continue;
       notifiedEmailIds.add(uid);
 
       const header = item.parts.find(p => p.which === 'HEADER')?.body;
@@ -106,36 +107,35 @@ async function checkGmail() {
   }
 }
 
-
 // -------------------------------------------------------------
 // 3. TELEGRAM BOT COMMAND HANDLER (/clean)
 // -------------------------------------------------------------
-app.post('/telegram-webhook', async (req, res) => {
+app.post('/telegram-webhook', (req, res) => {
+  // Always answer Telegram immediately with 200 OK so it never retries
+  res.status(200).send('OK');
+
   const body = req.body;
+  if (!body?.message?.text) return;
 
-  // Check if user sent a message
-  if (body.message && body.message.text) {
-    const text = body.message.text.trim().toLowerCase();
-    const currentMsgId = body.message.message_id;
-    const chatId = body.message.chat.id;
+  const text = body.message.text.trim().toLowerCase();
+  const currentMsgId = body.message.message_id;
+  const chatId = body.message.chat.id;
 
-    // Check if command is /clean or /clear
-    if (text.startsWith('/clean') || text.startsWith('/clear')) {
-      // Delete the last 25 messages backwards from the /clean command
-      const count = 25;
-      for (let i = 0; i <= count; i++) {
-        const idToDelete = currentMsgId - i;
-        try {
-          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+  if (text.startsWith('/clean') || text.startsWith('/clear')) {
+    (async () => {
+      // Delete recent messages in parallel
+      const deletePromises = [];
+      for (let i = 0; i <= 25; i++) {
+        deletePromises.push(
+          axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
             chat_id: chatId,
-            message_id: idToDelete
-          });
-        } catch (e) {
-          // Ignore errors for messages that can't be deleted or don't exist
-        }
+            message_id: currentMsgId - i
+          }).catch(() => {}) // Ignore errors silently
+        );
       }
+      await Promise.all(deletePromises);
 
-      // Send a confirmation and delete it after 4 seconds
+      // Send a temporary success message and delete it after 4 seconds
       try {
         const confirmMsg = await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: chatId,
@@ -143,31 +143,25 @@ app.post('/telegram-webhook', async (req, res) => {
           parse_mode: 'Markdown'
         });
 
-        setTimeout(async () => {
-          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+        setTimeout(() => {
+          axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
             chat_id: chatId,
             message_id: confirmMsg.data.result.message_id
-          });
+          }).catch(() => {});
         }, 4000);
-      } catch (err) {}
-    }
+      } catch (e) {}
+    })();
   }
-
-  res.status(200).send('OK');
 });
 
-// Check Gmail every 30 seconds
-setInterval(checkGmail, 30 * 1000);
-
-
+// Health check endpoint
 app.get('/', (req, res) => {
   res.send('Telegram Notifier Bot is running! 🚀');
 });
 
-// Use Render's port or default to 3000
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
-  await sendTelegram('🚀 *Bot is online on Render!* Listening for GitHub & Gmail.');
-  checkGmail();
+  await sendTelegram('🚀 *Bot is online!* Listening for GitHub & Gmail.');
 });
