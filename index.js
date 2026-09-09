@@ -17,7 +17,6 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason?.message || reason);
 });
 
-// Helper: Send Telegram message (Markdown) — unchanged, still used by email + startup
 async function sendTelegram(message) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
   try {
