@@ -115,7 +115,7 @@ setInterval(checkGmail, 30 * 1000);
 // START SERVER
 // -------------------------------------------------------------
 const PORT = 3000;
-app.listen(PORT, async () => {
+app.listen(PORT, async () => {  
   console.log(`Server is running on http://localhost:${PORT}`);
   await sendTelegram('🚀 *Bot is online!* Listening for GitHub events & Gmail.');
   // Run an immediate check for emails right on start
