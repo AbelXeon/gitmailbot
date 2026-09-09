@@ -106,6 +106,56 @@ async function checkGmail() {
   }
 }
 
+
+// -------------------------------------------------------------
+// 3. TELEGRAM BOT COMMAND HANDLER (/clean)
+// -------------------------------------------------------------
+app.post('/telegram-webhook', async (req, res) => {
+  const body = req.body;
+
+  // Check if user sent a message
+  if (body.message && body.message.text) {
+    const text = body.message.text.trim().toLowerCase();
+    const currentMsgId = body.message.message_id;
+    const chatId = body.message.chat.id;
+
+    // Check if command is /clean or /clear
+    if (text.startsWith('/clean') || text.startsWith('/clear')) {
+      // Delete the last 25 messages backwards from the /clean command
+      const count = 25;
+      for (let i = 0; i <= count; i++) {
+        const idToDelete = currentMsgId - i;
+        try {
+          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+            chat_id: chatId,
+            message_id: idToDelete
+          });
+        } catch (e) {
+          // Ignore errors for messages that can't be deleted or don't exist
+        }
+      }
+
+      // Send a confirmation and delete it after 4 seconds
+      try {
+        const confirmMsg = await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: '🧹 *Chat cleaned up!*',
+          parse_mode: 'Markdown'
+        });
+
+        setTimeout(async () => {
+          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
+            chat_id: chatId,
+            message_id: confirmMsg.data.result.message_id
+          });
+        }, 4000);
+      } catch (err) {}
+    }
+  }
+
+  res.status(200).send('OK');
+});
+
 // Check Gmail every 30 seconds
 setInterval(checkGmail, 30 * 1000);
 
