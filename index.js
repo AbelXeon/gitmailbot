@@ -9,7 +9,6 @@ app.use(express.json());
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Catch unexpected errors so the server NEVER crashes
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err.message);
 });
