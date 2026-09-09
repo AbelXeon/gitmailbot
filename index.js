@@ -51,9 +51,7 @@ app.post('/github-webhook', (req, res) => {
   res.status(200).send('OK');
 });
 
-// -------------------------------------------------------------
-// 2. GMAIL CHECKER (Checks every 30 seconds)
-// -------------------------------------------------------------
+
 const imapConfig = {
   imap: {
     user: process.env.GMAIL_USER,
