@@ -205,7 +205,7 @@ app.post('/github-webhook', (req, res) => {
 
   try {
     const result = buildGithubNotification(event, payload);
-    if (!result) return; // filtered event (e.g. unstar), send nothing
+    if (!result) return; 
 
     const { caption, avatarUrl } = result;
 
