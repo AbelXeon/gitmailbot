@@ -264,9 +264,9 @@ async function checkGmail() {
   }
 }
 
-// -------------------------------------------------------------
+// --------------------------------------------------------
 // 3. TELEGRAM BOT COMMAND HANDLER 
-// -------------------------------------------------------------
+// --------------------------------------------------------
 app.post('/telegram-webhook', (req, res) => {
   res.status(200).send('OK');
 
@@ -309,11 +309,9 @@ app.post('/telegram-webhook', (req, res) => {
 });
 
 
-
 app.get('/', (req, res) => {
   res.send('Telegram Notifier Bot is running! 🚀');
 });
-
 
 
 const PORT = process.env.PORT || 3000;
