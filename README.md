@@ -343,10 +343,10 @@ GitMailBot/
 ├── .env
 ├── .gitignore
 │
-├── services/
-│   ├── telegram.js
-│   ├── github.js
-│   └── gmail.js
+├
+│   
+│   
+│   
 │
 └── README.md
 ```
