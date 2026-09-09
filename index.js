@@ -295,7 +295,6 @@ app.post('/telegram-webhook', (req, res) => {
       }
       await Promise.all(deletePromises);
 
-      // Send a temporary success message and delete it after 4 seconds
       try {
         const confirmMsg = await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
           chat_id: chatId,
