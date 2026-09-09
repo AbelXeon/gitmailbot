@@ -144,7 +144,7 @@ function buildGithubNotification(event, payload) {
     }
 
     case 'star': {
-      if (payload.action !== 'created') return null; // skip "unstar" noise
+      if (payload.action !== 'created') return null; 
       caption =
         `⭐ <b>New Star!</b>\n` +
         `📁 <a href="${repoUrl}">${repoName}</a>\n` +
