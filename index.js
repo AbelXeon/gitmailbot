@@ -198,7 +198,7 @@ function buildGithubNotification(event, payload) {
 // 1. GITHUB WEBHOOK ENDPOINT (upgraded: real avatars + rich formatting)
 // -------------------------------------------------------------
 app.post('/github-webhook', (req, res) => {
-  res.status(200).send('OK'); // Reply immediately
+  res.status(200).send('OK'); 
 
   const event = req.headers['x-github-event'];
   const payload = req.body;
