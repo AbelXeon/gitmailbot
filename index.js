@@ -314,12 +314,14 @@ app.post('/telegram-webhook', (req, res) => {
   }
 });
 
-// Health check endpoint
+
+
 app.get('/', (req, res) => {
   res.send('Telegram Notifier Bot is running! 🚀');
 });
 
-// Start server
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
