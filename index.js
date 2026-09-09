@@ -271,7 +271,6 @@ async function checkGmail() {
 // 3. TELEGRAM BOT COMMAND HANDLER (/clean) — unchanged
 // -------------------------------------------------------------
 app.post('/telegram-webhook', (req, res) => {
-  // Always answer Telegram immediately with 200 OK so it never retries
   res.status(200).send('OK');
 
   const body = req.body;
