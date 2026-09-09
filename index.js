@@ -290,7 +290,7 @@ app.post('/telegram-webhook', (req, res) => {
           axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`, {
             chat_id: chatId,
             message_id: currentMsgId - i
-          }).catch(() => {}) // Ignore errors silently
+          }).catch(() => {}) 
         );
       }
       await Promise.all(deletePromises);
