@@ -112,10 +112,14 @@ async function checkGmail() {
 setInterval(checkGmail, 30 * 1000);
 
 
-const PORT = 3000;
-app.listen(PORT, async () => {  
-  console.log(`Server is running on http://localhost:${PORT}`);
-  await sendTelegram('🚀 *Bot is online!* Listening for GitHub events & Gmail.');
-  // Run an immediate check for emails right on start
+app.get('/', (req, res) => {
+  res.send('Telegram Notifier Bot is running! 🚀');
+});
+
+// Use Render's port or default to 3000
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, async () => {
+  console.log(`Server is running on port ${PORT}`);
+  await sendTelegram('🚀 *Bot is online on Render!* Listening for GitHub & Gmail.');
   checkGmail();
 });
