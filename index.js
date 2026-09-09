@@ -72,7 +72,6 @@ async function sendTelegramPhoto(photoUrl, caption) {
     });
   } catch (err) {
     console.error('Failed to send Telegram photo, falling back to text:', err.response?.data?.description || err.message);
-    // Avatar failed to load/send — never lose the notification, just send it as text
     await sendTelegramHTML(caption);
   }
 }
