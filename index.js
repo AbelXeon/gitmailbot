@@ -265,7 +265,7 @@ async function checkGmail() {
 }
 
 // -------------------------------------------------------------
-// 3. TELEGRAM BOT COMMAND HANDLER (/clean) — unchanged
+// 3. TELEGRAM BOT COMMAND HANDLER 
 // -------------------------------------------------------------
 app.post('/telegram-webhook', (req, res) => {
   res.status(200).send('OK');
