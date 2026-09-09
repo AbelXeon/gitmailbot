@@ -283,7 +283,6 @@ app.post('/telegram-webhook', (req, res) => {
 
   if (text.startsWith('/clean') || text.startsWith('/clear')) {
     (async () => {
-      // Delete recent messages in parallel
       const deletePromises = [];
       for (let i = 0; i <= 25; i++) {
         deletePromises.push(
